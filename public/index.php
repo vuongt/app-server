@@ -1,7 +1,7 @@
 <?php
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-if (PHP_SAPI == 'cli-server') {
+/*if (PHP_SAPI == 'cli-server') {
     // To help the built-in PHP dev server, check if the request was actually for
     // something which should probably be served as a static file
     $url  = parse_url($_SERVER['REQUEST_URI']);
@@ -9,29 +9,30 @@ if (PHP_SAPI == 'cli-server') {
     if (is_file($file)) {
         return false;
     }
-}
-date_default_timezone_set('UTC');
+}*/
 require __DIR__ . '/../vendor/autoload.php';
+date_default_timezone_set('UTC');
 
-session_start();
-
-$config['db']['host']   = "localhost";
+//session_start();
+$config['displayErrorDetails'] = true; //get informaton about error
+$config['addContentLengthHeader'] = false;
+/*$config['db']['host']   = "localhost";
 $config['db']['user']   = "dty-orange";
 $config['db']['pass']   = "dty";
-$config['db']['dbname'] = "appOrange";
+$config['db']['dbname'] = "appOrange";*/
 
 // Instantiate the app
 $settings = require __DIR__ . '/../src/settings.php';
-$app = new \Slim\App($settings);
+$app = new \Slim\App(["settings"=>$config]);
 
 // Set up dependencies
-require __DIR__ . '/../src/dependencies.php';
+//require __DIR__ . '/../src/dependencies.php';
 
 // Register middleware
-require __DIR__ . '/../src/middleware.php';
+//require __DIR__ . '/../src/middleware.php';
 
 // Register routes
-require __DIR__ . '/../src/routes.php';
+//require __DIR__ . '/../src/routes.php';
 require __DIR__ . '/../src/config.php';
 require __DIR__ . '/../src/Constants.php';
 require __DIR__ . '/../src/DbConnect.php';

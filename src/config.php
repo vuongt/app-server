@@ -2,7 +2,7 @@
 /**
  *  configuration de la base des donnée
  */
-define('DB_USERNAME', 'dty');
+define('DB_USERNAME', 'dty-orange');
 define('DB_PASSWORD', 'dty');
 define('DB_HOST', '127.0.0.1');
 define('DB_NAME', 'appOrange');

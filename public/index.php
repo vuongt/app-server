@@ -76,6 +76,10 @@ $container['dbLog'] = function($c) {
 //==========================ROUTES=========================
 //=========================================================
 
+$app->get('/', function (Request $request, Response $response) {
+    return $response->withHeader(200, "hello");
+});
+
 $app->get('/hello/{name}', function (Request $request, Response $response) {
     $name = $request->getAttribute('name');
     $message = "Hello, $name";

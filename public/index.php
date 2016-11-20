@@ -77,6 +77,7 @@ $container['dbLog'] = function($c) {
 //=========================================================
 
 $app->get('/', function (Request $request, Response $response) {
+    $this->log->addInfo("/ is called");
     return $response->withHeader(200, "hello");
 });
 

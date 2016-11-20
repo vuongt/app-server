@@ -6,3 +6,4 @@
  * Time: 12:55
  */
 require "./public/index.php";
+echo "OK";

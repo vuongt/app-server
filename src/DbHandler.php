@@ -273,6 +273,48 @@ class DbHandler {
         return $id;
     }
 
+    public function deleteApp($appId){
+        $stmt = $this->conn->prepare("DELETE FROM apps WHERE id = ?");
+        $stmt->bind_param("i", $appId);
+        if ($stmt->execute()) {
+            $stmt->close();
+            $this->log->addInfo("Deleted app number ".$appId. " from apps");
+        } else {
+            return false;
+        }
+        $stmt1 = $this->conn->prepare("DELETE FROM module_containers WHERE app_id = ?");
+        $stmt1->bind_param("i", $appId);
+        if ($stmt1->execute()) {
+            $stmt1->close();
+            $this->log->addInfo("Deleted container of app ".$appId. " from module_containers");
+        }else {
+            return false;
+        }
+        //TODO delete modules
+        return true;
+    }
+
+    public function updateApp($appId, $newName){
+        $stmt = $this->conn->prepare("UPDATE apps SET app_name = ? WHERE id = ?");
+        $stmt->bind_param("si", $newName, $appId);
+        if ($stmt->execute()) {
+            $stmt->close();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function createDefaultContainers($appId){
+        $this->log->addInfo("creating defaults containers");
+        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Media Box','media',".$appId.")");
+        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Poll Box','poll',".$appId.")");
+        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Calandar','calendar',".$appId.")");
+        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Budget Management','budget',".$appId.")");
+        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Chat Box','chat',".$appId.")");
+        return true;
+    }
+
     public function addUserToApp($appId, $userId){
         //Verify if this user has already been added
         $stmt1 = $this->conn->prepare("SELECT * FROM apps_users WHERE app_id = ? AND user_id = ?");
@@ -536,6 +578,25 @@ class DbHandler {
                 $stmt1->close();
                 $details["modules"] = $modules;
             } else return null;
+        } else if ($details["type"] =="poll"){
+            $this->log->addInfo("Get list of vote modules for container ".$containerId);
+            $modules = array();
+            $stmt2 = $this->conn->prepare("SELECT id, title, description FROM vote_module WHERE container_id= ? ");
+            $stmt2->bind_param("i", $containerId);
+            if ($stmt2->execute()) {
+                $this->log->addInfo("Query ok");
+                $stmt2->bind_result($moduleId, $moduleName, $description);
+                $this->log->addInfo($stmt2->num_rows);
+                while ($stmt2->fetch()){
+                    $module = array();
+                    $module["id"]= $moduleId;
+                    $module["title"] = $moduleName;
+                    $module["description"]=$description;
+                    $modules[] = $module;
+                }
+                $stmt2->close();
+                $details["modules"] = $modules;
+            } else return null;
         }
         //TODO for other type
         return $details;
@@ -613,8 +674,9 @@ class DbHandler {
    // =========Module VOTE=========
 
         public function getListIdVoteModule($container_id){
+        $details = array();
         $this->log->addInfo("WOW Get list of vote id of container ". $container_id);
-        $stmt = $this->conn->prepare("SELECT v.title,v.description FROM vote_module as v WHERE container_id =?");
+        $stmt = $this->conn->prepare("SELECT v.id,v.title,v.description FROM vote_module as v WHERE container_id =?");
         $stmt->bind_param("i",$container_id);
         $listsId = array();
         if($stmt->execute()){
@@ -622,12 +684,14 @@ class DbHandler {
             while($stmt->fetch()){
                 $listId = array();
                 $this->log->addInfo("The title is". $title);
+                $listId["id"]=$title;
                 $listId["title"]=$title;
                 $listId["description"]=$description;
                 $listsId[]=$listId;
             }
             $stmt->close();
-            return $listsId;
+            $details["polles"] = $listsId;
+            return $details;
         }
         return null;
         }
@@ -652,11 +716,11 @@ class DbHandler {
             $stmt->bind_param("ssi",$title,$description,$id);
 
             if($stmt->execute()){
-                $this->log->addInfo("WOW". $id);
+                $this->log->addInfo("update vote with id ". $id);
                 $stmt->close();
 
             }else {
-                return NULL;
+                return FALSE;
             }
 
             return $id;
@@ -668,11 +732,55 @@ class DbHandler {
             if($stmt->execute()){
                 $stmt->close();
                 $this->log->addInfo("Deleted vote");
+            }
+            $stmt = $this->conn->prepare("DELETE FROM vote_options WHERE vote_id =?");
+            $stmt->bind_param("i",$id);
+            if($stmt->execute()){
+                $stmt->close();
+                $this->log->addInfo("Deleted vote options");
                 return TRUE;
             }
             $this->log->addInfo("Failed to delete");
             return FALSE;
         }
+
+    public function getModuleVoteOptions($moduleId){
+        $this->log->addInfo("Get list of options of module vote". $moduleId);
+        $stmt = $this->conn->prepare("SELECT id, name, num_votes FROM vote_options WHERE vote_id = ?");
+        $stmt->bind_param("i",$moduleId);
+        if($stmt->execute()){
+            $options = array();
+            $stmt->bind_result($id, $name, $num_vote);
+            while($stmt->fetch()){
+                $option = array();
+                $option["id"]=$id;
+                $option["name"]=$name;
+                $option["value"]=$num_vote;
+                $options[] = $option;
+            }
+            return $options;
+        }
+        return null;
+    }
+    public function addOptionToModuleVote($moduleId, $option){
+        $this->log->addInfo("Add option to module vote". $moduleId);
+        $stmt = $this->conn->prepare("INSERT INTO vote_options(name, vote_id, num_votes) VALUES (?,?,0)");
+        $stmt->bind_param("si",$option,$moduleId);
+        if($stmt->execute()){
+            $optionId = $stmt->insert_id;
+            return $optionId;
+        }
+    }
+
+    public function incrementVoteOption($optionId){
+        $this->log->addInfo("Increment value of option ". $optionId);
+        $stmt = $this->conn->prepare("UPDATE vote_options SET num_votes = num_votes +1 WHERE id = ?");
+        $stmt->bind_param("i",$optionId);
+        if($stmt->execute()){
+            return true;
+        }
+        return false;
+    }
 
 }
 

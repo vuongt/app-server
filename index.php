@@ -238,9 +238,49 @@ $app->post('/createApp', function(Request $req, Response $res){
     return $res->withJson(array("appId"=>$appId));
 });
 
+$app->post('/createApp/default', function(Request $req, Response $res){
+    $this->log->addInfo("/createApp is called");
+    $db = new DbHandler($this->dbLog);
+    $jwt = extractTokenFromHeader($req);
+    $creatorId = getUserIdFromToken($jwt);
+    $name = $_POST["name"];
+    $category = $_POST["category"];
+    $font = $_POST['font'];
+    $theme = $_POST['theme'];
+    $layout = $_POST['layout'];
+    $description = $_POST["description"];
+    $appId = $db->createAppWithoutMedia($name,$creatorId,$category,$font,$theme,$layout,$description);
+    $db->addAdminToApp($appId, $creatorId);
+    $this->log->addInfo("Created app without media");
+    $fileHandler = new FileHandler($this->fileLog);
+    if ($_POST["icon"]=="default"){
+        $iconPath = DEFAULT_ICON_PATH;
+    } else {
+        $iconPath = $fileHandler->saveImageToApp($appId,"iconFile");
+    }
+    $db->saveFileToApp($appId, $iconPath, "image", "icon");
+    $this->log->addInfo("saved icon to ". $iconPath);
+    if ($_POST["background"]=="default"){
+        $backgroundPath = DEFAULT_BACKGROUND_PATH;
+    } else {
+        $backgroundPath = $fileHandler->saveImageToApp($appId, "backgroundFile");
+    }
+    $db->saveFileToApp($appId, $backgroundPath,"image", "background");
+    $this->log->addInfo("Saved background to ".$backgroundPath);
+    $db->createDefaultContainers($appId);
+    return $res->withJson(array("appId"=>$appId));
+});
+
 
 $app->get('/deleteApp', function(Request $req, Response $res){
+    $appId = $req->getQueryParam("appId");
+    $db = new DbHandler($this->dbLog);
+    if($db->deleteApp($appId)){
+        return $res->withHeader(200, "app deleted");
+    } else{
+        return $res->withHeader(500, "internal error");
 
+    }
 });
 
 $app->get('/loadApp', function(Request $req, Response $res){
@@ -249,6 +289,17 @@ $app->get('/loadApp', function(Request $req, Response $res){
     $db = new DbHandler($this->dbLog);
     $app =$db->getApp($appId);
     return $res->withJson($app);
+});
+
+$app->post('/updateApp', function(Request $req, Response $res){
+    $appId = $_POST["appId"];
+    $newName = $_POST["newName"];
+    $db = new DbHandler($this->dbLog);
+    if ($db->updateApp($appId, $newName)){
+        return $res->withHeader(200, "update success");
+    }
+    return $res->withHeader(500);
+
 });
 
 //=============Inside app action========
@@ -466,11 +517,9 @@ $app->get('/module/vote/getVote', function(Request $req, Response $res){
     $containerId = $req->getQueryParam("containerId",0);
     $db = new DbHandler($this->dbLog);
     $listId = $db->getListIdVoteModule($containerId);
-    if($listId){
-        return $res->withJson($listId);
-    }else{
-        return $res->withHeader(401, "No vote found");
-    }
+
+    return $res->withJson($listId);
+
 
 });
 
@@ -514,6 +563,42 @@ $app->get('/module/vote/deleteVote', function(Request $req, Response $res){
     return $res->withHeader(404, "Not FOUND");
 });
 
+$app->get('/module/vote/load', function(Request $req, Response $res){
+    $id = $req->getQueryParam("id",0);
+    $db = new DbHandler($this->dbLog);
+    $options = $db->getModuleVoteOptions($id);
+    return $res->withJson($options);
+});
+
+$app->post('/module/vote/addOption', function(Request $req, Response $res){
+    $moduleId = $_POST["moduleId"];
+    $option = $_POST["option"];
+    $db = new DbHandler($this->dbLog);
+    $optionId = $db->addOptionToModuleVote($moduleId, $option);
+    return $res->withJson(array("id"=>$optionId));
+});
+
+$app->get('/module/vote/increment', function(Request $req, Response $res){
+    $optionId = $req->getQueryParam("optionId", 0);
+    $db = new DbHandler($this->dbLog);
+    if($db->incrementVoteOption($optionId)){
+        return $res->withHeader(200, "OK");
+    }
+    return $res->withHeader(400, "Bad request");
+
+});
+
+$app->post('/module/vote/update', function(Request $req, Response $res){
+    $moduleId = $_POST["moduleId"];
+    $newName = $_POST["newName"];
+    $newDescription = $_POST["newDescription"];
+    $db = new DbHandler($this->dbLog);
+    if ($db->updateVote($moduleId, $newName, $newDescription)){
+        return $res->withHeader(200, "update success");
+    }
+    return $res->withHeader(500);
+
+});
 
 $app->run();
 

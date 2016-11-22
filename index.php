@@ -198,9 +198,11 @@ $app->get('/getMedia', function (Request $req, Response $res){
     $this->log->addInfo("/getMedia sending media from path ".$path);
     $image=file_get_contents($path);
     $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $res = $res->write($image);
-    $res = $res->withHeader('Content-Type', $finfo->buffer($image));
-    echo $image;
+    $body = $res->getBody();
+    $body->write($image);
+    //$res = $res->write($image);
+    $res = $res->withHeader('Content-Type', $finfo->buffer($image))->withBody($body);
+    //echo $image;
     return $res;
 });
 

@@ -239,6 +239,13 @@ class DbHandler {
         } else {
             return NULL;
         }
+        $stmt1 = $this->conn->prepare("INSERT INTO apps_admins (app_id,admin_id) VALUES (?,?)");
+        $stmt1->bind_param("ii", $appId, $creatorId);
+        if ($stmt1->execute()) {
+            $stmt1->close();
+        } else {
+            return NULL;
+        }
         return $appId;
     }
 

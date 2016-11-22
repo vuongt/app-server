@@ -316,7 +316,7 @@ class DbHandler {
         $this->log->addInfo("creating defaults containers");
         $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Media Box','media',".$appId.")");
         $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Poll Box','poll',".$appId.")");
-        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Calandar','calendar',".$appId.")");
+        $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Calendar','calendar',".$appId.")");
         $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Budget Management','budget',".$appId.")");
         $this->conn->query("INSERT INTO module_containers (name,type,app_id) VALUES ('Chat Box','chat',".$appId.")");
         return true;

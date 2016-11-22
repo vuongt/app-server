@@ -7,10 +7,10 @@ define('DB_PASSWORD', 'qN3fDKWAdxbsygSs');
 define('DB_HOST', '10.1.67.17');
 define('DB_NAME', 'default');
 
-//define('DB_USERNAME', 'dty-orange');
-//define('DB_PASSWORD', 'dty');
-//define('DB_HOST', '127.0.0.1');
-//define('DB_NAME', 'appOrange');
+/*define('DB_USERNAME', 'dty-orange');
+define('DB_PASSWORD', 'dty');
+define('DB_HOST', '127.0.0.1');
+define('DB_NAME', 'appOrange');*/
 
 define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);

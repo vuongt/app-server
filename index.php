@@ -223,14 +223,14 @@ $app->post('/createApp', function(Request $req, Response $res){
     $fileHandler = new FileHandler($this->fileLog);
     if ($_POST["icon"]=="default"){
         $iconPath = DEFAULT_ICON_PATH;
-    } else {
+    } else if ($_POST["icon"]=="custom"){
         $iconPath = $fileHandler->saveImageToApp($appId,"iconFile");
     }
     $db->saveFileToApp($appId, $iconPath, "image", "icon");
     $this->log->addInfo("saved icon to ". $iconPath);
     if ($_POST["background"]=="default"){
         $backgroundPath = DEFAULT_BACKGROUND_PATH;
-    } else {
+    } else if ($_POST["background"]=="custom"){
         $backgroundPath = $fileHandler->saveImageToApp($appId, "backgroundFile");
     }
     $db->saveFileToApp($appId, $backgroundPath,"image", "background");
